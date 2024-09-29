@@ -13,7 +13,6 @@ import { Button } from "./ui/button";
 export default function VideoList() {
   const [videos, SetVideos] = useState<any[]>([]);
   const [search, SetSearch] = useState<string>("");
-  console.log(videos);
 
   const getVideos = trpc.video.getVideos.useQuery({ query: search });
 
@@ -21,7 +20,7 @@ export default function VideoList() {
     if (getVideos.data) {
       SetVideos(getVideos.data);
     }
-  }, [getVideos.data]);
+  }, [getVideos.data, search]);
 
   if (getVideos.isLoading) {
     return <div>Loading...</div>;
@@ -30,7 +29,6 @@ export default function VideoList() {
   const handleSubmit = () => (e: any) => {
     console.log(e);
     e.preventDefault();
-    SetSearch("");
     getVideos.refetch();
   };
 
@@ -40,10 +38,11 @@ export default function VideoList() {
         type="search"
         placeholder="Search"
         className="mb-6"
+        value={search}
         onChange={(e) => SetSearch(e.target.value)}
       />
-      <Button onClick={handleSubmit()}>
-        <Search />
+      <Button onClick={handleSubmit()} variant="outline" size="icon">
+        <Search className="h-4 w-4" />
       </Button>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {Object?.values(videos).map((video: any) =>
