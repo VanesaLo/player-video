@@ -4,51 +4,44 @@ import { z } from "zod";
 
 export const videoRouter = router({
   getVideos: publicProcedure
+    .input(z.object({ query: z.string().optional() }))
+    .query(({ input }) => {
+      return prisma.videos.findMany({
+        where: {
+          OR: [{ title: { contains: input.query } }],
+        },
+      });
+    }),
+
+  getVideo: publicProcedure
     .input(
       z.object({
-        query: z.string().optional(),
+        id: z.number(),
       })
     )
-    .query(async ({ input }) => {
-      try {
-        const data = await fetch(
-          `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=10&q=${input.query}&key=${process.env.YOUTUBE_KEY}`
-        );
-        const result = await data.json();
-        return result;
-      } catch (error) {
-        throw new Error("Error fetching videos de YouTube");
-      }
+    .query(({ input }) => {
+      return prisma.videos.findUnique({
+        where: {
+          id: input.id,
+        },
+      });
     }),
 
   updateViews: publicProcedure
     .input(
       z.object({
         id: z.number(),
-        videoId: z.string(),
-        title: z.string(),
-        likes: z.number(),
       })
     )
     .mutation(async ({ input }) => {
-      const { videoId, title, id, likes } = input;
-
-      return await prisma.videos.upsert({
+      return await prisma.videos.update({
         where: {
-          videoId: videoId,
-          id: id,
+          id: input.id,
         },
-        update: {
+        data: {
           views: {
             increment: 1,
           },
-        },
-        create: {
-          id: id,
-          title: title,
-          videoId: videoId,
-          likes: likes,
-          views: 1,
         },
       });
     }),
@@ -57,18 +50,12 @@ export const videoRouter = router({
     .input(
       z.object({
         id: z.number(),
-        videoId: z.string(),
-        title: z.string(),
-        views: z.number(),
       })
     )
     .mutation(async ({ input }) => {
-      const { videoId, title, id, views } = input;
-
       return await prisma.videos.update({
         where: {
-          videoId: videoId,
-          id: id,
+          id: input.id,
         },
         data: {
           likes: {
